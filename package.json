@@ -1,0 +1,27 @@
+{
+  "name": "backbone-tags",
+  "version": "1.0.0",
+  "description": "Manage Models Tags with Backbone",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cloudoki/backbone-tags.git"
+  },
+  "keywords": [
+    "backbone",
+    "tags"
+  ],
+  "author": "Edgar Ribeiro",
+  "email": "edgar@cloudoki.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Cloudoki/backbone-tags/issues"
+  },
+  "homepage": "https://github.com/Cloudoki/backbone-tags#readme"
+}

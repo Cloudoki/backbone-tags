@@ -1,0 +1,26 @@
+{
+  "name": "backbone-tags",
+  "description": "Manage Models Tags with Backbone",
+  "main": "index.js",
+  "authors": [
+    "Edgar Ribeiro"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "backbone",
+    "tags"
+  ],
+  "homepage": "https://github.com/Cloudoki/backbone-tags",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
