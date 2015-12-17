@@ -5,6 +5,7 @@ Manage Models Tags with Backbone
 ## Requirements
 
 - [backbonejs](http://backbonejs.org/)
+- [backbone-relational](http://backbonerelational.org/)
 
 ## Instalation
 
