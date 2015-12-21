@@ -15,119 +15,69 @@
 })(this, function(Backbone) {
   'use strict';
 
-  var Tags = {};
+  var Tags = Object.create(null);
 
-  Tags.Model = Backbone.Model;
+  Tags.Model = Backbone.Model.extend({
+    /**
+     * checks if only has id and no tag data
+     * @return {Boolean} true if it has fetched data
+     */
+    isEmpty: function() {
+      return Object.keys(this.attributes).length > 1 && this.get('id');
+    }
+  });
+
+  /**
+   * Backbone Model containing the tag Id used as reference
+   */
   Tags.Reference = Backbone.Model.extend({
+    /**
+     * Retrieves the corresponding tag
+     *
+     * @return {Backbone.Model} tag model instance
+     */
     getTag: function() {
       return Tags.Library.get(this.get('id'));
-    }
-  });
-
-  Tags.fetch = function(tags) {
-    if (tags instanceof Array) {
-      var some = tags.splice(0, 32);
-      //fetch new tags
-      Tags.Library.fetch({
-        data: {
-          ids: JSON.stringify(some)
-        },
-      })
-      if (tags.length) Tags.fetch(tags);
-    } else {
-      throw new Error('expects an array')
-    }
-  }
-
-  Tags.Link = Backbone.Model.extend({
-    initialize: function(attrs, options) {
-      this.context = attrs.context;
-      console.log('INIT ATTRS LINK', attrs);
     },
-    url: function() {
-      return this.context.url + Tags.Library.url;
-    }
-  })
-  Tags.Extend = {
-    listTags: function() {
-      var contextTags = this.get('tags');
-      return Tags.Library.filter(function(tag) {
-        return contextTags.indexOf(tag.id) !== -1;
-      });
-    },
-    detach: function(tagId, options) {
-      var context = this;
-      console.log('DETACH', tagId);
-      var link = new Tags.Link({
-        id: tagId,
-        context: this
-      });
-      link.destroy({
-        error: options ? options.error : undefined,
-        success: function() {
-          var tags = context.get('tags');
-          tags.splice(tags.indexOf(tagId), 1);
-          context.set('tags', tags);
-          if (options && options.success) {
-            options.success.apply(this, arguments);
-          }
-        }
-      });
-      console.log('LINK', link);
-    },
-    attach: function(tagId, options) {
-      console.log('attach', tagId)
-      var link = new Tags.Link({
-        id: tagId,
-        context: this
-      });
-      link.save({}, {
-        error: options ? options.error : undefined,
-        success: function() {
-          var tags = context.get('tags');
-          if (tags.indexOf(tagId) === -1) {
-            tags.push(tagId);
-            context.set('tags', tags);
-          }
-          if (options && options.success) {
-            options.success.apply(this, arguments);
-          }
-        }
-      });
-      console.log('LINK', link);
-    },
-    parse: function(data) {
-      console.log('DATA PARSE');
-      if (data && data.tags instanceof Array) {
-        Tags.fetch(data.tags.filter(function(tagId) {
-          return !Tags.Library.get(tagId)
-        }));
-        data.tags = new Tag.ContextCollection(data.tags, {
-          context: this
+    /*
+     * Overwrites set to add tag reference to main library
+     */
+    set: function(attrs, opts) {
+      // if there's a new tag id that is not in library add it
+      if (attrs.id && !Tags.Library.get(attrs.id)) {
+        var added = Tags.Library.add({
+          id: attrs.id
         });
       }
-      return data;
+      return Backbone.Model.prototype.set.call(this, attrs, opts)
     }
-  }
-
+  });
+  /**
+   * Collection of references to Tags associated with a parent Model
+   */
   Tags.Collection = Backbone.Collection.extend({
-    model: Tags.Model,
-    url: 'tags'
-  });
-
-  Tags.ContextCollection = Backbone.Collection.extend({
     model: Tags.Reference,
-    initialize: function(attrs, options) {
-      this.context = options.context;
-    }
+    initialize: function(models, options) {
+      this.parentModel = options.parentModel;
+    },
+    /**
+     * Associate collection url to the parent Model
+     * @return {string | undefined}
+     */
     url: function() {
-      return this.context.url + '/' +
-        this.context.id + '/' +
-        Tags.Library.url;
+      return this.parentModel ? this.parentModel.url() + Tags.Library.url : undefined;
     }
   });
 
-  Tags.Library = new Tags.Collection();
+  var TagsLibrary = Backbone.Collection.extend({
+    model: Tags.Model,
+    url: '/tags'
+  });
+  /**
+   * Store of all the tags models
+   * @type {Backbone.Collection}
+   */
+  Tags.Library = new TagsLibrary();
 
   return Tags;
 });
