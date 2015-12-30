@@ -65,7 +65,8 @@
      * @return {string | undefined}
      */
     url: function() {
-      return this.parentModel ? this.parentModel.url() + Tags.Library.url : undefined;
+      return this.parentModel ? this.parentModel.url() +
+        Tags.Library.url : undefined;
     }
   });
 
@@ -78,6 +79,78 @@
    * @type {Backbone.Collection}
    */
   Tags.Library = new TagsLibrary();
+
+  Tags.View = Backbone.View.extend({
+    events: {
+      'click #detach': 'detachTag'
+    },
+    /**
+     * Detach current tag from the model
+     * @return {void}
+     */
+    detachTag: function() {
+      var self = this;
+      this.model.destroy({
+        wait: true,
+        success: function(model, response) {
+          self.remove();
+        }
+      });
+    },
+  });
+
+  Tags.TagsView = Backbone.View.extend({
+    /**
+     * Set the parent model.
+     * Fetch the tags related with this user and render them.
+     * @param  {object} options Contains the parameters such as parentModel
+     * @return {void}
+     */
+    initialize: function(options) {
+      var self = this;
+      this.editElement = options.editElement || this.editElement;
+      this.collection = new Tags.Collection([], {
+        parentModel: options.parentModel
+      });
+      this.collection.fetch({
+        wait: true,
+        success: function() {
+          self.render();
+        }
+      });
+
+      // this.listenTo(this.collection, 'add', this.renderTag);
+      // this.listenTo(this.collection, 'reset', this.render);
+    },
+    renderTag: function(item) {
+      var self = this;
+      var tagView = new Tags.View({
+        model: item,
+        editElement: this.editElement
+      });
+      this.$el.append(tagView.render().el);
+      // get events triggered from note view and propagate them
+      noteView.on('tag:detached', function() {
+        self.collection.remove(tagView.model);
+        self.trigger('tag:detached');
+      });
+      noteView.on('tag:aborted', function() {
+        self.trigger('tag:aborted')
+      });
+      noteView.on('tag:saved', function() {
+        self.trigger('tag:saved')
+      });
+    },
+    /**
+     * Render tags collection by rendering each tag it contains
+     * @return {void}
+     */
+    render: function() {
+      this.collection.each(function(item) {
+        this.renderTag(item);
+      }, this);
+    }
+  });
 
   return Tags;
 });
