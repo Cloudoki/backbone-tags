@@ -67,66 +67,42 @@ var tags = new Bloodhound({
   }
 });
 
-$('.typeahead').tokenfield({
-  typeahead: [{
-  hint: true,
-  highlight: true,
-  minLength: 3
-}, {
-  name: 'tags',
-  displayKey: 'text',
-  // source: tags.ttAdapter(),
-  source: function(query, syncResults, asyncResults) {
-    console.log(query)
-    tags.search(query, syncResults, function(suggestions) {
-      var filtered = suggestions.filter(function(suggestion) {
-        return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
+$('.typeahead').tagsinput({
+  typeaheadjs: [{
+    hint: true,
+    highlight: true,
+    minLength: 3
+  }, {
+    name: 'tags',
+    displayKey: 'text',
+    // source: tags.ttAdapter(),
+    source: function(query, syncResults, asyncResults) {
+      console.log(query)
+      tags.search(query, syncResults, function(suggestions) {
+        var filtered = suggestions.filter(function(suggestion) {
+          return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
+        });
+        asyncResults(filtered);
       });
-      asyncResults(filtered);
-    });
-  },
-  templates: {
-    notFound: '<div class="notFound">0 results found</div>',
-    pending: '<div class="pending">pending</div>',
-    header: '<div class="headerSuggestion"></div>',
-    footer: '<div class="footerSuggestion"></div>',
-    suggestion: function(context) {
-      return Mustache.render('<p><strong>{{text}}</strong></p>', context);
+    },
+    templates: {
+      notFound: '<div class="notFound">0 results found</div>',
+      pending: '<div class="pending">pending</div>',
+      header: '<div class="headerSuggestion"></div>',
+      footer: '<div class="footerSuggestion"></div>',
+      suggestion: function(context) {
+        return Mustache.render('<p><strong>{{text}}</strong></p>', context);
+      }
     }
+  }],
+  itemValue: function(item) {
+    return item.text;
   }
-}]
 });
-// $('.typeahead').typeahead({
-//   hint: true,
-//   highlight: true,
-//   minLength: 3
-// }, {
-//   name: 'tags',
-//   displayKey: 'text',
-//   // source: tags.ttAdapter(),
-//   source: function(query, syncResults, asyncResults) {
-//     console.log(query)
-//     tags.search(query, syncResults, function(suggestions) {
-//       var filtered = suggestions.filter(function(suggestion) {
-//         return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
-//       });
-//       asyncResults(filtered);
-//     });
-//   },
-//   templates: {
-//     notFound: '<div class="notFound">0 results found</div>',
-//     pending: '<div class="pending">pending</div>',
-//     header: '<div class="headerSuggestion"></div>',
-//     footer: '<div class="footerSuggestion"></div>',
-//     suggestion: function(context) {
-//       return Mustache.render('<p><strong>{{text}}</strong></p>', context);
-//     }
-//   }
-// });
 
-$('.typeahead').bind('typeahead:select', function(ev, suggestion) {
-  console.log('Selected: ', suggestion);
+$('.typeahead').on('itemAdded', function(event) {
+  console.log("added item", event.item);
 });
-$('.typeahead').bind('typeahead:autocomplete', function(ev, suggestion) {
-  console.log('Auto completed: ', suggestion);
+$('.typeahead').on('itemRemoved', function(event) {
+  console.log("removed item", event.item);
 });
