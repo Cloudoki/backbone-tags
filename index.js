@@ -1,18 +1,18 @@
 (function(root, main) {
   // AMD
   if (typeof define === 'function' && define.amd) {
-    define(['backbone'],
-      function(Backbone) {
-        return main(Backbone);
+    define(['backbone', 'mustache'],
+      function(Backbone, Mustache) {
+        return main(Backbone, Mustache);
       });
     // CommonJS
   } else if (typeof exports !== 'undefined' && typeof require !== 'undefined') {
-    module.exports = main(require('backbone'));
+    module.exports = main(require('backbone'), require('mustache'));
     // Globals
   } else {
-    root.Tags = main(root.Backbone);
+    root.Tags = main(root.Backbone, root.Mustache);
   }
-})(this, function(Backbone) {
+})(this, function(Backbone, Mustache) {
   'use strict';
 
   var Tags = Object.create(null);
@@ -22,7 +22,7 @@
      * checks if only has id and no tag data
      * @return {Boolean} true if it has fetched data
      */
-    isEmpty: function() {
+    hasData: function() {
       return Object.keys(this.attributes).length > 1 && this.get('id');
     }
   });
@@ -80,26 +80,27 @@
    */
   Tags.Library = new TagsLibrary();
 
-  Tags.View = Backbone.View.extend({
-    events: {
-      'click #detach': 'detachTag'
+  var bloodhound = new Bloodhound({
+    datumTokenizer: Bloodhound.tokenizers.whitespace,
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    identify: function(obj) {
+      return obj.id;
     },
-    /**
-     * Detach current tag from the model
-     * @return {void}
-     */
-    detachTag: function() {
-      var self = this;
-      this.model.destroy({
-        wait: true,
-        success: function(model, response) {
-          self.remove();
-        }
-      });
-    },
+    remote: {
+      rateLimitWait: 1000,
+      url: Tags.Library.url + '?search=%QUERY',
+      wildcard: '%QUERY',
+      filter: function(tags) {
+        return $.map(tags, function(tag) {
+          return tag;
+        });
+      }
+    }
   });
 
   Tags.TagsView = Backbone.View.extend({
+    typeahead: $('.typeahead'),
+    template: '<h6>No template, please add one.</h6>',
     /**
      * Set the parent model.
      * Fetch the tags related with this user and render them.
@@ -108,9 +109,47 @@
      */
     initialize: function(options) {
       var self = this;
-      this.editElement = options.editElement || this.editElement;
+      this.typeahead = options.typeaheadElement || this.typeahead;
+      this.template = options.template || this.template;
       this.collection = new Tags.Collection([], {
         parentModel: options.parentModel
+      });
+      this.typeahead.tagsinput({
+        typeaheadjs: [{
+          hint: true,
+          highlight: true,
+          minLength: 3
+        }, {
+          name: 'tags',
+          displayKey: 'text',
+          source: function(query, syncResults, asyncResults) {
+            console.log(query)
+            bloodhound.search(query, syncResults, function(suggestions) {
+              var filtered = suggestions.filter(function(suggestion) {
+                return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
+              });
+              asyncResults(filtered);
+            });
+          },
+          templates: {
+            notFound: '<div class="notFound">0 results found</div>',
+            pending: '<div class="pending">pending</div>',
+            header: '<div class="headerSuggestion"></div>',
+            footer: '<div class="footerSuggestion"></div>',
+            suggestion: function(context) {
+              return Mustache.render(self.template, context);
+            }
+          }
+        }],
+        itemValue: function(item) {
+          return item.text;
+        }
+      });
+      this.typeahead.on('itemAdded', function(event) {
+        console.log("added item", event.item);
+      });
+      this.typeahead.on('itemRemoved', function(event) {
+        console.log("removed item", event.item);
       });
       this.collection.fetch({
         wait: true,
@@ -119,27 +158,24 @@
         }
       });
 
-      // this.listenTo(this.collection, 'add', this.renderTag);
-      // this.listenTo(this.collection, 'reset', this.render);
+      this.listenTo(this.collection, 'add', this.renderTag);
+      this.listenTo(this.collection, 'reset', this.render);
     },
     renderTag: function(item) {
+      console.log(item);//TODO get tag from server to add here
       var self = this;
-      var tagView = new Tags.View({
-        model: item,
-        editElement: this.editElement
-      });
-      this.$el.append(tagView.render().el);
+      //this.typeahead.tagsinput('add', item);
       // get events triggered from note view and propagate them
-      noteView.on('tag:detached', function() {
-        self.collection.remove(tagView.model);
-        self.trigger('tag:detached');
-      });
-      noteView.on('tag:aborted', function() {
-        self.trigger('tag:aborted')
-      });
-      noteView.on('tag:saved', function() {
-        self.trigger('tag:saved')
-      });
+      // noteView.on('tag:detached', function() {
+      //   self.collection.remove(tagView.model);
+      //   self.trigger('tag:detached');
+      // });
+      // noteView.on('tag:aborted', function() {
+      //   self.trigger('tag:aborted')
+      // });
+      // noteView.on('tag:saved', function() {
+      //   self.trigger('tag:saved')
+      // });
     },
     /**
      * Render tags collection by rendering each tag it contains
