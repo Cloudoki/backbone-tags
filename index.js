@@ -37,7 +37,7 @@
      * @return {Backbone.Model} tag model instance
      */
     getTag: function() {
-      return Tags.Library.get(this.get('id'));
+      return Tags.Library.get(this.get('id') || this.get('tagId'));
     },
     /*
      * Overwrites set to add tag reference to main library
@@ -99,8 +99,13 @@
   });
 
   Tags.TagsView = Backbone.View.extend({
-    typeahead: $('.typeahead'),
-    template: '<h6>No template, please add one.</h6>',
+    el: 'body',
+    typeahead: '.typeahead',
+    tagsElement: $('#tags'),
+    oldModels: {},
+    suggestionTemplate: '<h6>No template for suggestions, please add one.</h6>',
+    viewTemplate: '<h6>No template for view, please add one.</h6>',
+    editTemplate: '<h6>No template for edit, please add one.</h6>',
     /**
      * Set the parent model.
      * Fetch the tags related with this user and render them.
@@ -110,11 +115,38 @@
     initialize: function(options) {
       var self = this;
       this.typeahead = options.typeaheadElement || this.typeahead;
-      this.template = options.template || this.template;
+      this.tagsElement = options.tagsElement || this.tagsElement;
+      this.suggestionTemplate = options.suggestionTemplate ||
+        this.suggestionTemplate;
+      this.viewTemplate = options.viewTemplate || this.viewTemplate;
+      this.editTemplate = options.editTemplate || this.editTemplate;
       this.collection = new Tags.Collection([], {
         parentModel: options.parentModel
       });
-      this.typeahead.tagsinput({
+      this.collection.fetch({
+        wait: true,
+        success: function() {
+          var ids = self.collection.models.map(function(model) {
+            return model.id;
+          });
+          console.log(ids);
+          Tags.Library.fetch({
+            data: {
+              id: ids
+            },
+            success: function() {
+              self.render();
+            }
+          });
+        }
+      });
+    },
+    editTags: function() {
+      var self = this;
+      this.oldModels = this.collection.clone();
+      this.oldModels.parentModel = this.collection.parentModel;
+      this.tagsElement.html(this.editTemplate);
+      $(this.typeahead).tagsinput({
         typeaheadjs: [{
           hint: true,
           highlight: true,
@@ -123,7 +155,6 @@
           name: 'tags',
           displayKey: 'text',
           source: function(query, syncResults, asyncResults) {
-            console.log(query)
             bloodhound.search(query, syncResults, function(suggestions) {
               var filtered = suggestions.filter(function(suggestion) {
                 return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
@@ -137,7 +168,7 @@
             header: '<div class="headerSuggestion"></div>',
             footer: '<div class="footerSuggestion"></div>',
             suggestion: function(context) {
-              return Mustache.render(self.template, context);
+              return Mustache.render(self.suggestionTemplate, context);
             }
           }
         }],
@@ -145,37 +176,57 @@
           return item.text;
         }
       });
-      this.typeahead.on('itemAdded', function(event) {
-        console.log("added item", event.item);
-      });
-      this.typeahead.on('itemRemoved', function(event) {
-        console.log("removed item", event.item);
-      });
-      this.collection.fetch({
-        wait: true,
-        success: function() {
-          self.render();
+      $(this.typeahead).on('itemAdded', function(event) {
+        // console.log("added item", event.item);
+        Tags.Library.add(event.item);
+        var exists = _(self.collection.models).some(function(model) {
+          return event.item.inCollection;
+        });
+        if (!exists) {
+          self.collection.add({
+            tagId: event.item.id
+          });
         }
       });
-
-      this.listenTo(this.collection, 'add', this.renderTag);
-      this.listenTo(this.collection, 'reset', this.render);
+      $(this.typeahead).on('itemRemoved', function(event) {
+        // console.log("removed item", event.item);
+        var model = self.collection.get(event.item.cid);
+        if (!model.isNew()) {
+          model.destroy();
+        }
+        self.collection.remove(model);
+      });
+      this.collection.each(function(item) {
+        var model = item.getTag().toJSON();
+        model.cid = item.cid;
+        model.inCollection = true;
+        $(self.typeahead).tagsinput('add', model);
+      });
+    },
+    saveTags: function() {
+      this.oldModels = this.collection.clone();
+      this.oldModels.parentModel = this.collection.parentModel;
+      this.tagsElement.html("");
+      this.collection.each(function(model) {
+        if (model.isNew()) {
+          model.save();
+        }
+      });
+      // Backbone.sync('create', this.collection, {
+      //   success: function() {
+      //     console.log('Saved!');
+      //   }
+      // });
+      this.render();
+    },
+    cancelEdit: function() {
+      this.tagsElement.html("");
+      this.collection = this.oldModels;
+      this.render();
     },
     renderTag: function(item) {
-      console.log(item);//TODO get tag from server to add here
       var self = this;
-      //this.typeahead.tagsinput('add', item);
-      // get events triggered from note view and propagate them
-      // noteView.on('tag:detached', function() {
-      //   self.collection.remove(tagView.model);
-      //   self.trigger('tag:detached');
-      // });
-      // noteView.on('tag:aborted', function() {
-      //   self.trigger('tag:aborted')
-      // });
-      // noteView.on('tag:saved', function() {
-      //   self.trigger('tag:saved')
-      // });
+      this.tagsElement.append(Mustache.render(this.viewTemplate, item.toJSON()));
     },
     /**
      * Render tags collection by rendering each tag it contains
@@ -183,7 +234,7 @@
      */
     render: function() {
       this.collection.each(function(item) {
-        this.renderTag(item);
+        this.renderTag(item.getTag());
       }, this);
     }
   });

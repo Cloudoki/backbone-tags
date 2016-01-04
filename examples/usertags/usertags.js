@@ -12,10 +12,30 @@
     name: 'John'
   });
 
+  var viewTemplate = "<span class=\"label label-info\">{{text}}</span>";
+  var editTemplate = "<input class=\"typeahead\" type=\"text\" " +
+                     "placeholder=\"Input tag here\"></input>";
+
   var tagsView = new Tags.TagsView({
     parentModel: user,
-    typeaheadElement: $('.typeahead'),
-    template: "<p class='text-info'>{{text}}</p>"
+    typeaheadElement: '.typeahead',
+    tagsElement: $('#tags'),
+    suggestionTemplate: "<p class='text-info'>{{text}}</p>",
+    viewTemplate: viewTemplate,
+    editTemplate: editTemplate
+  });
+
+  // edit tags when button `edit tags` is pressed
+  $('#edit').click(function() {
+    tagsView.editTags();
+  });
+  // save tags when button `save tags` is pressed
+  $('#save').click(function() {
+    tagsView.saveTags();
+  });
+  // cancel tags edit when button `cancel edit tags` is pressed
+  $('#cancel').click(function() {
+    tagsView.cancelEdit();
   });
 
   /*
