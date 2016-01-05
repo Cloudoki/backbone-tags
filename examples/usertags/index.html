@@ -5,16 +5,18 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="/dist/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="/dist/typeahead.css">
 </head>
 
 <body>
     <div id="title">Tags:</div>
-    <div id="tags">
-      <div class="view"></div>
-      <div class="edit"></div>
-    </div>
+    <!-- tags views will be rendered here -->
+    <div id="tags"></div>
+    <!-- clicking this button will trigger edit mode -->
     <button id="edit">edit tags</button>
+    <!-- clicking this button will save the tags -->
     <button id="save">save tags</button>
+    <!-- clicking this button will cancel tagas editing and revert to prior editing -->
     <button id="cancel">cancel edit tags</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
