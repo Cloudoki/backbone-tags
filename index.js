@@ -57,7 +57,9 @@
    */
   Tags.Collection = Backbone.Collection.extend({
     model: Tags.Reference,
+    args: {},
     initialize: function(models, options) {
+      this.args = options;
       this.parentModel = options.parentModel;
     },
     /**
@@ -67,6 +69,13 @@
     url: function() {
       return this.parentModel ? this.parentModel.url() +
         Tags.Library.url : undefined;
+    },
+    /**
+     * Overrides the clone() method to also clone the collection parameters
+     * @return {Backbone.Collection}
+     */
+    clone: function() {
+      return new this.constructor(this.models, this.args);
     }
   });
 
@@ -82,9 +91,9 @@
 
   /**
    * Templates that will be used to render the content into the web page.
-   * viewTemplate - template for the view mode
-   * editTemplate - template for the edit mode
-   * suggestionTemplate - object containing the templates for the suggestions
+   * view - template for the view mode
+   * edit - template for the edit mode
+   * suggestion - object containing the templates for the suggestions
    *   text - the template for the text suggestion
    *   notFound - template for when suggestions are not found
    *   pending - template for when suggestions are being fetched
@@ -92,15 +101,15 @@
    *   footer - template for the footer of the suggestions menu
    * @type {Object}
    */
-  Tags.templates = {
-    viewTemplate: '<h6>No template for view, please add one.</h6>',
-    editTemplate: '<h6>No template for edit, please add one.</h6>',
-    suggestionTemplate: {
+  Tags.Templates = {
+    view: '<h6>No template for view, please add one.</h6>',
+    edit: '<h6>No template for edit, please add one.</h6>',
+    suggestion: {
       text: '<h6>No template for suggestions, please add one.</h6>',
       notFound: '<div class="notFound"></div>',
       pending: '<div class="pending"></div>',
-      header: '<div class="headerSuggestion"></div>',
-      footer: '<div class="footerSuggestion"></div>',
+      header: '',
+      footer: '',
     }
   };
 
@@ -110,9 +119,9 @@
    * @return {Backbone.View}
    */
   Tags.TagsView = Backbone.View.extend({
-    el: 'body',
     typeahead: '.typeahead',
     tagsElement: $('#tags'),
+    mode: "view",
     oldModels: {},
     /**
      * Set the parent model.
@@ -124,10 +133,7 @@
       var self = this;
       this.typeahead = options.typeaheadElement || this.typeahead;
       this.tagsElement = options.tagsElement || this.tagsElement;
-      Tags.Library.url = options.url;
-      this.collection = new Tags.Collection([], {
-        parentModel: options.parentModel
-      });
+      this.collection = options.collection;
       /**
        * Used as a suggestion engine for typeahead.js to fetch tags from the server
        * as the user inputs them.
@@ -144,7 +150,8 @@
           return obj.id;
         },
         remote: {
-          rateLimitWait: 1000,
+          rateLimitBy: options.rateLimitBy,
+          rateLimitWait: options.rateLimitWait,
           url: Tags.Library.url + '?search=%QUERY',
           wildcard: '%QUERY'
         }
@@ -163,7 +170,6 @@
             return model.id;
           });
           self.oldModels = self.collection.clone();
-          self.oldModels.parentModel = self.collection.parentModel;
           Tags.Library.fetch({
             data: {
               id: ids
@@ -179,16 +185,16 @@
     },
     /**
      * Set the view mode to edit.
-     * Initialize bootstrap-tagsinput with typeahead
+     * Initialize bootstrap-tagsinput with typeahead.
      * {@link https://github.com/bootstrap-tagsinput/bootstrap-tagsinput}
      * {@link https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md}
      * @return {void}
      */
     editTags: function() {
       var self = this;
+      this.mode = "edit";
       this.oldModels = this.collection.clone();
-      this.oldModels.parentModel = this.collection.parentModel;
-      this.tagsElement.html(Tags.templates.editTemplate);
+      this.tagsElement.html(Tags.Templates.edit);
       $(this.typeahead).tagsinput({
         typeaheadjs: [{
           hint: true,
@@ -206,12 +212,12 @@
             });
           },
           templates: {
-            notFound: Tags.templates.suggestionTemplate.notFound,
-            pending: Tags.templates.suggestionTemplate.pending,
-            header: Tags.templates.suggestionTemplate.header,
-            footer: Tags.templates.suggestionTemplate.footer,
+            notFound: Tags.Templates.suggestion.notFound,
+            pending: Tags.Templates.suggestion.pending,
+            header: Tags.Templates.suggestion.header,
+            footer: Tags.Templates.suggestion.footer,
             suggestion: function(context) {
-              return Mustache.render(Tags.templates.suggestionTemplate.text, context);
+              return Mustache.render(Tags.Templates.suggestion.text, context);
             }
           }
         }],
@@ -247,48 +253,56 @@
         model.inCollection = true;
         $(self.typeahead).tagsinput('add', model);
       });
+      $(this.typeahead).tagsinput('focus');
     },
     /**
-     * Save the edited tags
+     * Save the edited tags by sending them to the server
      * @return {void}
      */
     saveTags: function() {
       var self = this;
-      this.tagsElement.html("");
-      Backbone.sync('create', this.collection, {
-        wait: true,
-        success: function() {
-          self.oldModels = self.collection.clone();
-          self.oldModels.parentModel = self.collection.parentModel;
-          self.render();
-        },
-        error: function() {
-          self.collection = self.oldModels;
-          self.render();
-        }
-      });
-      this.trigger('tag:save');
+      if (this.mode === "edit") {
+        this.tagsElement.html("");
+        Backbone.sync('create', this.collection, {
+          wait: true,
+          success: function() {
+            self.oldModels = self.collection.clone();
+            self.render();
+          },
+          error: function() {
+            self.collection = self.oldModels;
+            self.render();
+          }
+        });
+        this.mode = "view";
+        this.trigger('tag:save');
+      }
     },
     /**
-     * Cancel edition and restore collection to before being edited.
+     * Cancel edition and restore collection to state before being edited.
      * @return {void}
      */
     cancelEdit: function() {
-      this.tagsElement.html("");
-      this.collection = this.oldModels;
-      this.render();
-      this.trigger('tag:cancel');
+      if (this.mode === "edit") {
+        this.tagsElement.html("");
+        this.collection = this.oldModels;
+        this.render();
+        this.mode = "view";
+        this.trigger('tag:cancel');
+      }
     },
     /**
      * Render a tag to web page using the template
      * @param  {Backbone.Model} item The tag object
+     * @borrows Tags.Templates.view
      * @return {void}
      */
     renderTag: function(item) {
-      this.tagsElement.append(Mustache.render(Tags.templates.viewTemplate, item.toJSON()));
+      this.tagsElement.append(Mustache.render(Tags.Templates.view, item.toJSON()));
     },
     /**
-     * Render tags collection by rendering each tag it contains
+     * Render tags collection by rendering each tag it contains with the view
+     * template and appends all the tags to the corresponding element
      * @return {void}
      */
     render: function() {
@@ -297,6 +311,26 @@
       }, this);
     }
   });
+
+  /**
+   * Initializes the tags plugin with the inputted options
+   * @param  {Object} options Contains the options to initialize the plugin
+   * @return {Backbone.View}
+   */
+  Tags.init = function(options) {
+    var tags = new Tags.Collection([], {
+      parentModel: options.parentModel
+    });
+    Tags.Library.url = options.url || Tags.Library.url;
+    Tags.Templates = options.templates || Tags.Templates;
+    return new Tags.TagsView({
+      typeaheadElement: options.typeaheadElement,
+      tagsElement: options.tagsElement,
+      collection: tags,
+      rateLimitBy: options.rateLimitBy || 'throttle',
+      rateLimitWait: options.rateLimitWait || 1000
+    });
+  }
 
   return Tags;
 });
