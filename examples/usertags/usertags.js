@@ -57,4 +57,18 @@
     render: true
   });
 
+  // listening triggers
+  tagsView.on('tag:attach', function() {
+    console.log("attach tag triggered");
+  });
+  tagsView.on('tag:detach', function() {
+    console.log("detach tag triggered");
+  });
+  tagsView.on('tag:save', function() {
+    console.log("save tags triggered");
+  });
+  tagsView.on('tag:cancel', function() {
+    console.log("cancel triggered");
+  });
+
 })(Backbone, Tags);

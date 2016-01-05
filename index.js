@@ -230,6 +230,7 @@
           self.collection.add({
             tagId: event.item.id
           });
+          self.trigger('tag:attach');
         }
       });
       // Detect tag remove event and remove it from the collection
@@ -237,6 +238,7 @@
         // console.log("removed item", event.item);
         var model = self.collection.get(event.item.cid);
         self.collection.remove(model);
+        self.trigger('tag:detach');
       });
       // Add existing tags to the tagsinput for editing
       this.collection.each(function(item) {
@@ -265,6 +267,7 @@
           self.render();
         }
       });
+      this.trigger('tag:save');
     },
     /**
      * Cancel edition and restore collection to before being edited.
@@ -274,6 +277,7 @@
       this.tagsElement.html("");
       this.collection = this.oldModels;
       this.render();
+      this.trigger('tag:cancel');
     },
     /**
      * Render a tag to web page using the template
