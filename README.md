@@ -21,7 +21,7 @@ Manage Models Tags with Backbone
 
 You need to provide Mustache templates to be able to render the tags.
 - `view`: The template used to render the tag view. How the tags will look in the Web page. **Required**
-- `edit`: The template used to render the edit mode of the tag. An HTML element with the attribute **data-role="typeahead"**. **Required**
+- `edit`: The template used to render the edit mode of the tag. An HTML element with the attribute **`data-role="typeahead"`**. **Required**
 - `suggestion`:
     + `text`: The template for for the suggestions text. How the text in the suggestions will look like. **Required**
     + `notFound`: The template for when no suggestions is found.
@@ -90,11 +90,11 @@ You may use the Tags.init function for standard use of the plugin
 ####Options
 
 When instantiating Tags there are a number of options you can configure.
-- `parentModel`: The Model that will be the parent of the tags.
+- `parentModel`: The Model that will be the parent of the tags. **Required**
 - `url`: The URL where to get the tags from.
-- `tagsElement`: The container where the tags will be rendered.
+- `tagsElement`: The container where the tags will be rendered. **Required**
 - `textName`: The tags object name to access the tags text value. default: *text*
-- `templates`: The templates for rendering the tags view.
+- `templates`: The templates for rendering the tags view. **Required**
 - `rateLimitBy`: The method used to rate-limit network requests. Can be *debounce* or *throttle*. Read more about how these method work [here](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation). default: *throttle*
 - `rateLimitWait`: The time interval in milliseconds that will be used by rateLimitBy. default: *1000*
 
