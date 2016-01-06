@@ -193,68 +193,70 @@
      */
     editTags: function() {
       var self = this;
-      this.mode = "edit";
-      this.oldModels = this.collection.clone();
-      this.tagsElement.html(Tags.Templates.edit);
-      $(this.typeahead).tagsinput({
-        typeaheadjs: [{
-          hint: true,
-          highlight: true,
-          minLength: 3
-        }, {
-          name: 'tags',
-          displayKey: self.textName,
-          source: function(query, syncResults, asyncResults) {
-            self.bloodhound.search(query, syncResults, function(suggestions) {
-              var filtered = suggestions.filter(function(suggestion) {
-                return suggestion[self.textName].toLowerCase().indexOf(query.toLowerCase()) >= 0;
+      if (this.mode === "view") {
+        this.oldModels = this.collection.clone();
+        this.tagsElement.html(Tags.Templates.edit);
+        $(this.typeahead).tagsinput({
+          typeaheadjs: [{
+            hint: true,
+            highlight: true,
+            minLength: 3
+          }, {
+            name: 'tags',
+            displayKey: self.textName,
+            source: function(query, syncResults, asyncResults) {
+              self.bloodhound.search(query, syncResults, function(suggestions) {
+                var filtered = suggestions.filter(function(suggestion) {
+                  return suggestion[self.textName].toLowerCase().indexOf(query.toLowerCase()) >= 0;
+                });
+                asyncResults(filtered);
               });
-              asyncResults(filtered);
-            });
-          },
-          templates: {
-            notFound: Tags.Templates.suggestion.notFound || '',
-            pending: Tags.Templates.suggestion.pending || '',
-            header: Tags.Templates.suggestion.header || '',
-            footer: Tags.Templates.suggestion.footer || '',
-            suggestion: function(context) {
-              return Mustache.render(Tags.Templates.suggestion.text, context);
+            },
+            templates: {
+              notFound: Tags.Templates.suggestion.notFound || '',
+              pending: Tags.Templates.suggestion.pending || '',
+              header: Tags.Templates.suggestion.header || '',
+              footer: Tags.Templates.suggestion.footer || '',
+              suggestion: function(context) {
+                return Mustache.render(Tags.Templates.suggestion.text, context);
+              }
             }
+          }],
+          itemValue: function(item) {
+            return item[self.textName];
           }
-        }],
-        itemValue: function(item) {
-          return item[self.textName];
-        }
-      });
-      // Detect tag addition event and add it to the collection if not there
-      $(this.typeahead).on('itemAdded', function(event) {
-        // console.log("added item", event.item);
-        Tags.Library.add(event.item);
-        var exists = _(self.collection.models).some(function(model) {
-          return event.item.inCollection;
         });
-        if (!exists) {
-          self.collection.add({
-            tagId: event.item.id
+        // Detect tag addition event and add it to the collection if not there
+        $(this.typeahead).on('itemAdded', function(event) {
+          // console.log("added item", event.item);
+          Tags.Library.add(event.item);
+          var exists = _(self.collection.models).some(function(model) {
+            return event.item.inCollection;
           });
-          self.trigger('tag:attach');
-        }
-      });
-      // Detect tag remove event and remove it from the collection
-      $(this.typeahead).on('itemRemoved', function(event) {
-        // console.log("removed item", event.item);
-        var model = self.collection.get(event.item.cid);
-        self.collection.remove(model);
-        self.trigger('tag:detach');
-      });
-      // Add existing tags to the tagsinput for editing
-      this.collection.each(function(item) {
-        var model = item.getTag().toJSON();
-        model.cid = item.cid;
-        model.inCollection = true;
-        $(self.typeahead).tagsinput('add', model);
-      });
-      $(this.typeahead).tagsinput('focus');
+          if (!exists) {
+            self.collection.add({
+              tagId: event.item.id
+            });
+            self.trigger('tag:attach');
+          }
+        });
+        // Detect tag remove event and remove it from the collection
+        $(this.typeahead).on('itemRemoved', function(event) {
+          // console.log("removed item", event.item);
+          var model = self.collection.get(event.item.cid);
+          self.collection.remove(model);
+          self.trigger('tag:detach');
+        });
+        // Add existing tags to the tagsinput for editing
+        this.collection.each(function(item) {
+          var model = item.getTag().toJSON();
+          model.cid = item.cid;
+          model.inCollection = true;
+          $(self.typeahead).tagsinput('add', model);
+        });
+        $(this.typeahead).tagsinput('focus');
+      }
+      this.mode = "edit";
     },
     /**
      * Save the edited tags by sending them to the server
