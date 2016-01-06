@@ -119,7 +119,8 @@
    * @return {Backbone.View}
    */
   Tags.TagsView = Backbone.View.extend({
-    typeahead: '.typeahead',
+    typeahead: '[data-role="typeahead"]',
+    textName: 'text',
     tagsElement: $('#tags'),
     mode: "view",
     oldModels: {},
@@ -131,7 +132,7 @@
      */
     initialize: function(options) {
       var self = this;
-      this.typeahead = options.typeaheadElement || this.typeahead;
+      this.textName = options.textName || this.textName;
       this.tagsElement = options.tagsElement || this.tagsElement;
       this.collection = options.collection;
       /**
@@ -202,27 +203,27 @@
           minLength: 3
         }, {
           name: 'tags',
-          displayKey: 'text',
+          displayKey: self.textName,
           source: function(query, syncResults, asyncResults) {
             self.bloodhound.search(query, syncResults, function(suggestions) {
               var filtered = suggestions.filter(function(suggestion) {
-                return suggestion.text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
+                return suggestion[self.textName].toLowerCase().indexOf(query.toLowerCase()) >= 0;
               });
               asyncResults(filtered);
             });
           },
           templates: {
-            notFound: Tags.Templates.suggestion.notFound,
-            pending: Tags.Templates.suggestion.pending,
-            header: Tags.Templates.suggestion.header,
-            footer: Tags.Templates.suggestion.footer,
+            notFound: Tags.Templates.suggestion.notFound || '',
+            pending: Tags.Templates.suggestion.pending || '',
+            header: Tags.Templates.suggestion.header || '',
+            footer: Tags.Templates.suggestion.footer || '',
             suggestion: function(context) {
               return Mustache.render(Tags.Templates.suggestion.text, context);
             }
           }
         }],
         itemValue: function(item) {
-          return item.text;
+          return item[self.textName];
         }
       });
       // Detect tag addition event and add it to the collection if not there
@@ -323,13 +324,18 @@
     });
     Tags.Library.url = options.url || Tags.Library.url;
     Tags.Templates = options.templates || Tags.Templates;
-    return new Tags.TagsView({
+    var tagsView = new Tags.TagsView({
       typeaheadElement: options.typeaheadElement,
       tagsElement: options.tagsElement,
       collection: tags,
       rateLimitBy: options.rateLimitBy || 'throttle',
       rateLimitWait: options.rateLimitWait || 1000
     });
+    // fetch tags from server and render them
+    tagsView.fetch({
+      render: true
+    });
+    return tagsView;
   }
 
   return Tags;

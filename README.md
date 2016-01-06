@@ -16,90 +16,122 @@ Manage Models Tags with Backbone
 - **npm:** `npm install github:Cloudoki/backbone-tags`
 
 ##  Usage
-### Initialize the plugin:
+
+### Templates
+
+You need to provide Mustache templates to be able to render the tags.
+- `view`: The template used to render the tag view. How the tags will look in the Web page. **Required**
+- `edit`: The template used to render the edit mode of the tag. An HTML element with the attribute **data-role="typeahead"**. **Required**
+- `suggestion`:
+    + `text`: The template for for the suggestions text. How the text in the suggestions will look like. **Required**
+    + `notFound`: The template for when no suggestions is found.
+    + `pending`: The template for when the suggestions are being fetched from the server.
+    + `header`: The template for the header of the suggestions.
+    + `footer`: The template for the footer of the suggestions.
+
 ```javascript
-// Creating a model to be the tags parent
+  var templates = {
+    view: '<span class="label label-info">{{text}}</span>',
+    edit: '<input class="typeahead" data-role="typeahead" type="text" ' +
+      'placeholder="Input tag here"></input>',
+    suggestion: {
+      text: '<p class="text-info">{{text}}</p>',
+      notFound: '<div class="notFound">0 results found</div>',
+      pending: '<div class="pending">pending</div>',
+      header: '',
+      footer: '',
+    }
+  };
+```
+
+###Containers
+
+You will need to provide a container where the tags will be rendered.
+
+```html
+<!-- tags views will be rendered here -->
+<div id="tags"></div>
+```
+
+###ParentModel
+
+You will need an parent model for the tags to associate with:
+
+```javascript
+  // Creating a model to be the tags parent
   var User = Backbone.Model.extend({
-    // the model must have a urlRoot assigned
+    // the model must have a urlRoot assigned because this model is not
+    //  within a collection 
     urlRoot: '/users'
   });
   var user = new User({
     id: '1',
     name: 'John'
   });
+```
 
+### Initialization
+
+####Tags.init(options)
+
+You may use the Tags.init function for standard use of the plugin
+
+```javascript
   var tags = Tags.init({
     // adding the tags parent
     parentModel: user,
-    // URL to get tags from
-    url: '/tags',
-    // the element class/id in the template where to render the tagsinput
-    typeaheadElement: '.typeahead',
     // the element where to render views
     tagsElement: $('#tags'),
     // templates for rendering the views
-    templates: {
-      view: '<span class="label label-info">{{text}}</span>',
-      edit: '<input class="typeahead" type="text" ' +
-        'placeholder="Input tag here"></input>',
-      suggestion: {
-        text: '<p class="text-info">{{text}}</p>',
-        notFound: '<div class="notFound">0 results found</div>',
-        pending: '<div class="pending">pending</div>',
-        // optional
-        header: '',
-        // optional
-        footer: '',
-      }
-    },
-    // the method used to rate-limit network requests debounce|throttle
-    // {@link http://drupalmotion.com/article/debounce-and-throttle-visual-explanation}
-    // default: `throttle`
-    rateLimitBy: 'throttle',
-    // the time interval in milliseconds that will be used by rateLimitBy
-    // default: `1000`
-    rateLimitWait: 800,
+    templates: templates
   });
 ```
 
+####Options
+
+When instantiating Tags there are a number of options you can configure.
+- `parentModel`: The Model that will be the parent of the tags.
+- `url`: The URL where to get the tags from.
+- `tagsElement`: The container where the tags will be rendered.
+- `textName`: The tags object name to access the tags text value. default: *text*
+- `templates`: The templates for rendering the tags view.
+- `rateLimitBy`: The method used to rate-limit network requests. Can be *debounce* or *throttle*. Read more about how these method work [here](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation). default: *throttle*
+- `rateLimitWait`: The time interval in milliseconds that will be used by rateLimitBy. default: *1000*
+
 ### Managing the tags:
-Use jQuery to call the functions on events on DOM.
+
+To manage your tags you can call the tags provided functions:
+- `editTags()`: Enter edit mode.
+- `saveTags()`: Try to save the tags while in edit mode.
+- `cancelEdit()`: Cancel the edition and reverts to prior edition, in edit mode.
+
 ```html
-<!-- tags views will be rendered here -->
-<div id="tags"></div>
 <!-- clicking this button will trigger edit mode -->
 <button id="edit">edit tags</button>
 <!-- clicking this button will save the tags -->
 <button id="save">save tags</button>
-<!-- clicking this button will cancel tagas editing and revert to prior editing -->
+<!-- clicking this button will cancel tags editing and revert to prior editing -->
 <button id="cancel">cancel edit tags</button>
 ```
 
 ```javascript
   // enter edit tags mode when button `edit tags` is pressed
   $('#edit').click(function() {
-    tagsView.editTags();
+    tags.editTags();
   });
   // save tags when button `save tags` is pressed
   $('#save').click(function() {
-    tagsView.saveTags();
+    tags.saveTags();
   });
   // cancel tags edit when button `cancel edit tags` is pressed
   $('#cancel').click(function() {
-    tagsView.cancelEdit();
-  });
-```
-
-###Fetching the tag from the server and rendering:
-```javascript
-  // fetch tags from server and render them
-  tags.fetch({
-    render: true
+    tags.cancelEdit();
   });
 ```
 
 ### Listening to tags triggers:
-There are 4 events that the plugin triggers:
+
+There are 4 events that the tags view emits:
 - **'tag:attach'**: when a new tag is added to the collection
 - **'tag:detach'**: when a tag is remove from the collection
 - **'tag:save'**: when a tags are saved
@@ -107,17 +139,16 @@ There are 4 events that the plugin triggers:
 
 ```javascript
   // listening triggers
-  tagsView.on('tag:attach', function() {
+  tags.on('tag:attach', function() {
     console.log("attach tag triggered");
   });
-  tagsView.on('tag:detach', function() {
+  tags.on('tag:detach', function() {
     console.log("detach tag triggered");
   });
-  tagsView.on('tag:save', function() {
+  tags.on('tag:save', function() {
     console.log("save tags triggered");
   });
-  tagsView.on('tag:cancel', function() {
+  tags.on('tag:cancel', function() {
     console.log("cancel triggered");
   });
 ```
-
