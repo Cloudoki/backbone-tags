@@ -119,7 +119,7 @@
       notFound: '<div class="notFound"></div>',
       pending: '<div class="pending"></div>',
       header: '',
-      footer: '',
+      footer: ''
     }
   };
 
@@ -161,6 +161,7 @@
           });
           self.oldModels = self.collection.clone();
           Tags.Library.fetch({
+            wait: true,
             data: {
               ids: ids
             },
@@ -260,6 +261,7 @@
           success: function() {
             self.oldModels = self.collection.clone();
             self.render();
+            self.trigger('tag:save');
           },
           error: function() {
             self.collection = self.oldModels;
@@ -267,7 +269,6 @@
           }
         });
         this.mode = 'view';
-        this.trigger('tag:save');
       }
     },
     /**
