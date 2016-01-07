@@ -20,7 +20,7 @@
   var User = Backbone.Model.extend({
     // the model must have a urlRoot assigned because this model is not
     //  within a collection
-    urlRoot: '/users'
+    urlRoot: 'users'
   });
   var user = new User({
     id: '1',
@@ -38,28 +38,28 @@
 
   // enter edit tags mode when button `edit tags` is pressed
   $('#edit').click(function() {
-    tags.editTags();
+    tags.view.list.editTags();
   });
   // save tags when button `save tags` is pressed
   $('#save').click(function() {
-    tags.saveTags();
+    tags.view.list.saveTags();
   });
   // cancel tags edit when button `cancel edit tags` is pressed
   $('#cancel').click(function() {
-    tags.cancelEdit();
+    tags.view.list.cancelEdit();
   });
 
   // listening triggers
-  tags.on('tag:attach', function() {
+  tags.view.list.on('tag:attach', function() {
     console.log("attach tag triggered");
   });
-  tags.on('tag:detach', function() {
+  tags.view.list.on('tag:detach', function() {
     console.log("detach tag triggered");
   });
-  tags.on('tag:save', function() {
+  tags.view.list.on('tag:save', function() {
     console.log("save tags triggered");
   });
-  tags.on('tag:cancel', function() {
+  tags.view.list.on('tag:cancel', function() {
     console.log("cancel triggered");
   });
 

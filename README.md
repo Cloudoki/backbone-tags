@@ -1,6 +1,6 @@
 # Backbone-Tags
 
-Manage Models Tags with Backbone
+Manage Models Tags with Backbone, typeahead.js and rendered with Mustache
 
 ## Requirements
 
@@ -62,7 +62,7 @@ You will need an parent model for the tags to associate with:
   var User = Backbone.Model.extend({
     // the model must have a urlRoot assigned because this model is not
     //  within a collection 
-    urlRoot: '/users'
+    urlRoot: 'users'
   });
   var user = new User({
     id: '1',
@@ -92,11 +92,13 @@ You may use the Tags.init function for standard use of the plugin
 When instantiating Tags there are a number of options you can configure.
 - `parentModel`: The Model that will be the parent of the tags. **Required**
 - `url`: The URL where to get the tags from.
-- `tagsElement`: The container where the tags will be rendered. **Required**
+- `tagsElement`: The container where the tags will be rendered.
 - `textName`: The tags object name to access the tags text value. default: *text*
 - `templates`: The templates for rendering the tags view. **Required**
 - `rateLimitBy`: The method used to rate-limit network requests. Can be *debounce* or *throttle*. Read more about how these method work [here](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation). default: *throttle*
 - `rateLimitWait`: The time interval in milliseconds that will be used by rateLimitBy. default: *1000*
+- `render` auto render the view list after initialization
+- `fetch` fetch the collection after initialization
 
 ### Managing the tags:
 
@@ -117,15 +119,15 @@ To manage your tags you can call the tags provided functions:
 ```javascript
   // enter edit tags mode when button `edit tags` is pressed
   $('#edit').click(function() {
-    tags.editTags();
+    tags.view.list.editTags();
   });
   // save tags when button `save tags` is pressed
   $('#save').click(function() {
-    tags.saveTags();
+    tags.view.list..saveTags();
   });
   // cancel tags edit when button `cancel edit tags` is pressed
   $('#cancel').click(function() {
-    tags.cancelEdit();
+    tags.view.list..cancelEdit();
   });
 ```
 
@@ -139,16 +141,16 @@ There are 4 events that the tags view emits:
 
 ```javascript
   // listening triggers
-  tags.on('tag:attach', function() {
+  tags.view.list.on('tag:attach', function() {
     console.log("attach tag triggered");
   });
-  tags.on('tag:detach', function() {
+  tags.view.list.on('tag:detach', function() {
     console.log("detach tag triggered");
   });
-  tags.on('tag:save', function() {
+  tags.view.list.on('tag:save', function() {
     console.log("save tags triggered");
   });
-  tags.on('tag:cancel', function() {
+  tags.view.list.on('tag:cancel', function() {
     console.log("cancel triggered");
   });
 ```
