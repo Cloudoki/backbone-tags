@@ -20,7 +20,6 @@
   // TODO: options.fetch / options.create / options.sync allow to provide them
   //  for each backbone method used
   // TODO: cancel, save, edit events on view on "Backbone.View.events"
-  // TODO: no global templates (associate them to each view)
   // TODO: Tags-init options tags collection url (and options.url => .libraryUrl)
   // TODO: improve documentation
 
@@ -93,11 +92,37 @@
    * Store of all the tags models
    * @type {Backbone.Collection}
    */
-  var TagsLibrary = Backbone.Collection.extend({
+  Tags.LibraryCollection = Backbone.Collection.extend({
     model: Tags.Model,
-    url: 'tags'
+    url: 'tags',
+    initialize: function(options) {
+      var self = this;
+
+      this.url = options.url || this.url;
+      /**
+       * Used as a suggestion engine for typeahead.js to fetch tags from the
+       *  server as the user inputs them.
+       * Set rateLimitWait to an obscene number of requests being made to the
+       * remote endpoint.
+       * Set the url to the Tags.Library endpoint.
+       * See more about Bloodhound in the link bellow
+       * {@link https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md}
+       */
+      this.bloodhound = options.bloodhound || new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        identify: function(obj) {
+          return obj.id;
+        },
+        remote: {
+          rateLimitBy: options.rateLimitBy || 'throttle',
+          rateLimitWait: options.rateLimitWait || 1000,
+          url: self.url + '?search=%QUERY',
+          wildcard: '%QUERY'
+        }
+      });
+    },
   });
-  Tags.Library = new TagsLibrary();
 
   /**
    * Templates that will be used to render the content into the web page.
@@ -138,14 +163,16 @@
     /**
      * Set the parent model.
      * Fetch the tags related with this user and render them.
-     * @param  {Object} options Contains the parameters such as parentModel
+     * @param  {object} options Contains the parameters such as parentModel
+     * @param  {string} options.textName
      * @return {void}
      */
     initialize: function(options) {
       var self = this;
       this.textName = options.textName || this.textName;
       this.collection = options.collection;
-      this.bloodhound = options.bloodhound;
+      this.bloodhound = options.bloodhound || Tags.Library.bloodhound;
+      this.templates = options.templates || Tags.Templates;
     },
     /**
      * Get the user tags from the server
@@ -185,7 +212,7 @@
       var self = this;
       if (this.mode === 'view') {
         this.oldModels = this.collection.clone();
-        this.$el.html(Tags.Templates.edit);
+        this.$el.html(self.templates.edit);
         this.$(this.typeahead).tagsinput({
           typeaheadjs: [{
             hint: true,
@@ -203,12 +230,12 @@
               });
             },
             templates: {
-              notFound: Tags.Templates.suggestion.notFound || '',
-              pending: Tags.Templates.suggestion.pending || '',
-              header: Tags.Templates.suggestion.header || '',
-              footer: Tags.Templates.suggestion.footer || '',
+              notFound: self.templates.suggestion.notFound || '',
+              pending: self.templates.suggestion.pending || '',
+              header: self.templates.suggestion.header || '',
+              footer: self.templates.suggestion.footer || '',
               suggestion: function(context) {
-                return Mustache.render(Tags.Templates.suggestion.text, context);
+                return Mustache.render(self.templates.suggestion.text, context);
               }
             }
           }],
@@ -287,11 +314,10 @@
     /**
      * Render a tag to web page using the template
      * @param  {Backbone.Model} item The tag object
-     * @borrows Tags.Templates.view
      * @return {void}
      */
     renderTag: function(item) {
-      this.$el.append(Mustache.render(Tags.Templates.view, item.toJSON()));
+      this.$el.append(Mustache.render(this.templates.view, item.toJSON()));
     },
     /**
      * Render tags collection by rendering each tag it contains with the view
@@ -311,6 +337,13 @@
    * @return {Backbone.View}
    */
   Tags.init = function(options) {
+    if (!Tags.Library) {
+      Tags.Library = new Tags.LibraryCollection({
+        bloodhound: options.bloodhound,
+        url: options.url
+      });
+    }
+
     var opts = _.defaults(options, {
       render: true,
       fetch: true
@@ -324,36 +357,12 @@
       parentModel: options.parentModel
     });
 
-    Tags.Library.url = options.url || Tags.Library.url;
-    Tags.Templates = options.templates || Tags.Templates;
-    /**
-     * Used as a suggestion engine for typeahead.js to fetch tags from the server
-     * as the user inputs them.
-     * Set rateLimitWait to an obscene number of requests being made to the
-     * remote endpoint.
-     * Set the url to the Tags.Library endpoint.
-     * See more about Bloodhound in the link bellow
-     * {@link https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md}
-     */
-    instance.bloodhound = options.bloodhound || new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.whitespace,
-      queryTokenizer: Bloodhound.tokenizers.whitespace,
-      identify: function(obj) {
-        return obj.id;
-      },
-      remote: {
-        rateLimitBy: options.rateLimitBy || 'throttle',
-        rateLimitWait: options.rateLimitWait || 1000,
-        url: Tags.Library.url + '?search=%QUERY',
-        wildcard: '%QUERY'
-      }
-    });
-
     if (options.tagsElement) {
       instance.view.list = new Tags.Views.List({
         el: options.tagsElement,
         collection: instance.collection,
-        bloodhound: instance.bloodhound
+        bloodhound: options.bloodhound,
+        templates: options.templates
       });
     }
 
