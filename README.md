@@ -11,7 +11,7 @@ Manage Models Tags with Backbone, typeahead.js and rendered with Mustache
 
 ## Instalation
 
-- **Script Tag:** `<script type="text/javascript" src="https://github.com/Cloudoki/backbone-tags/blob/master/index.js"></script>`
+- **Script Tag:** `<script type="text/javascript" src="http://cdn.rawgit.com/Cloudoki/backbone-notes/blob/master/index.js"></script>`
 - **Bower:** `bower install git://github.com/Cloudoki/backbone-tags.git`
 - **npm:** `npm install github:Cloudoki/backbone-tags`
 
@@ -72,7 +72,7 @@ You will need an parent model for the tags to associate with:
 
 ### Initialization
 
-####Tags.init(options)
+#### Tags.init(options)
 
 You may use the Tags.init function for standard use of the plugin
 
@@ -87,7 +87,7 @@ You may use the Tags.init function for standard use of the plugin
   });
 ```
 
-####Options
+#### Options
 
 When instantiating Tags there are a number of options you can configure.
 - `parentModel`: The Model that will be the parent of the tags. **Required**
