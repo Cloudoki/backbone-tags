@@ -1,27 +1,24 @@
-(function(root, main) {
+(function (root, main) {
   // AMD
   if (typeof define === 'function' && define.amd) {
-    define(['backbone', 'mustache', 'bloodhound'],
-      function(Backbone, Mustache, Bloodhound, _) {
-        return main(Backbone, Mustache, Bloodhound, _);
-      });
-    // CommonJS
+    define(['backbone', 'mustache', 'bloodhound', 'underscore'], main);
+  // CommonJS
   } else if (typeof exports !== 'undefined' && typeof require !== 'undefined') {
     module.exports = main(require('backbone'), require('mustache'),
-      //NOTE: non existant npm bloudhound package
       require('bloodhound'), require('underscore'));
-    // Globals
+  // Globals
   } else {
+    /* eslint-disable no-param-reassign */
     root.Tags = main(root.Backbone, root.Mustache, root.Bloodhound, root._);
+    /* eslint-enable no-param-reassign */
   }
-})(this, function(Backbone, Mustache, Bloodhound, _) {
+})(this, function (Backbone, Mustache, Bloodhound, _) {
   'use strict';
 
   // TODO: options.fetch / options.create / options.sync allow to provide them
   //  for each backbone method used
   // TODO: cancel, save, edit events on view on "Backbone.View.events"
   // TODO: Tags-init options tags collection url (and options.url => .libraryUrl)
-  // TODO: improve documentation
 
   var Tags = Object.create(null);
 
@@ -30,7 +27,7 @@
      * checks if only has id and no tag data
      * @return {Boolean} true if it has fetched data
      */
-    hasData: function() {
+    hasData: function () {
       return Object.keys(this.attributes).length > 1 && this.get('id');
     }
   });
@@ -44,20 +41,20 @@
      *
      * @return {Backbone.Model} tag model instance
      */
-    getTag: function() {
+    getTag: function () {
       return Tags.Library.get(this.get('id') || this.get('tagId'));
     },
     /*
      * Overwrites set to add tag reference to main library
      */
-    set: function(attrs, opts) {
+    set: function (attrs, opts) {
       // if there's a new tag id that is not in library add it
       if (attrs.id && !Tags.Library.get(attrs.id)) {
-        var added = Tags.Library.add({
+        Tags.Library.add({
           id: attrs.id
         });
       }
-      return Backbone.Model.prototype.set.call(this, attrs, opts)
+      return Backbone.Model.prototype.set.call(this, attrs, opts);
     }
   });
   /**
@@ -66,7 +63,7 @@
   Tags.Collection = Backbone.Collection.extend({
     model: Tags.Reference,
     args: {},
-    initialize: function(models, options) {
+    initialize: function (models, options) {
       this.args = options;
       this.parentModel = options.parentModel;
       this._url = options.url;
@@ -75,7 +72,7 @@
      * Associate collection url to the parent Model
      * @return {string | undefined}
      */
-    url: function() {
+    url: function () {
       return this.parentModel ? this.parentModel.url() + '/' +
         (this._url || 'tags') : undefined;
     },
@@ -83,7 +80,7 @@
      * Overrides the clone() method to also clone the collection parameters
      * @return {Backbone.Collection}
      */
-    clone: function() {
+    clone: function () {
       return new this.constructor(this.models, this.args);
     }
   });
@@ -95,7 +92,7 @@
   Tags.LibraryCollection = Backbone.Collection.extend({
     model: Tags.Model,
     url: 'tags',
-    initialize: function(options) {
+    initialize: function (options) {
       var self = this;
 
       this.url = options.url || this.url;
@@ -111,7 +108,7 @@
       this.bloodhound = options.bloodhound || new Bloodhound({
         datumTokenizer: Bloodhound.tokenizers.whitespace,
         queryTokenizer: Bloodhound.tokenizers.whitespace,
-        identify: function(obj) {
+        identify: function (obj) {
           return obj.id;
         },
         remote: {
@@ -167,8 +164,7 @@
      * @param  {string} options.textName
      * @return {void}
      */
-    initialize: function(options) {
-      var self = this;
+    initialize: function (options) {
       this.textName = options.textName || this.textName;
       this.collection = options.collection;
       this.bloodhound = options.bloodhound || Tags.Library.bloodhound;
@@ -178,12 +174,12 @@
      * Get the user tags from the server
      * @return {void}
      */
-    fetch: function(options) {
+    fetch: function (options) {
       var self = this;
       this.collection.fetch({
         wait: true,
-        success: function() {
-          var ids = self.collection.models.map(function(model) {
+        success: function () {
+          var ids = self.collection.models.map(function (model) {
             return model.id;
           });
           self.oldModels = self.collection.clone();
@@ -192,7 +188,7 @@
             data: {
               ids: ids
             },
-            success: function() {
+            success: function () {
               if (options.render) {
                 self.render();
               }
@@ -208,7 +204,7 @@
      * {@link https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md}
      * @return {void}
      */
-    editTags: function() {
+    editTags: function () {
       var self = this;
       if (this.mode === 'view') {
         this.oldModels = this.collection.clone();
@@ -221,10 +217,12 @@
           }, {
             name: 'tags',
             displayKey: self.textName,
-            source: function(query, syncResults, asyncResults) {
-              self.bloodhound.search(query, syncResults, function(suggestions) {
-                var filtered = suggestions.filter(function(suggestion) {
-                  return suggestion[self.textName].toLowerCase().indexOf(query.toLowerCase()) >= 0;
+            source: function (query, syncResults, asyncResults) {
+              self.bloodhound.search(query, syncResults, function (suggestions) {
+                var filtered = suggestions.filter(function (suggestion) {
+                  return suggestion[self.textName]
+                    .toLowerCase()
+                    .indexOf(query.toLowerCase()) >= 0;
                 });
                 asyncResults(filtered);
               });
@@ -234,22 +232,21 @@
               pending: self.templates.suggestion.pending || '',
               header: self.templates.suggestion.header || '',
               footer: self.templates.suggestion.footer || '',
-              suggestion: function(context) {
+              suggestion: function (context) {
                 return Mustache.render(self.templates.suggestion.text, context);
               }
             }
           }],
-          itemValue: function(item) {
+          itemValue: function (item) {
             return item[self.textName];
           }
         });
         // Detect tag addition event and add it to the collection if not there
-        this.$(this.typeahead).on('itemAdded', function(event) {
-          // console.log('added item', event.item);
-          Tags.Library.add(event.item);
-          var exists = _(self.collection.models).some(function(model) {
-            return event.item.inCollection;
+        this.$(this.typeahead).on('itemAdded', function (event) {
+          var exists = _(self.collection.models).some(function (model) {
+            return model.tagId === event.item.id;
           });
+          Tags.Library.add(event.item);
           if (!exists) {
             self.collection.add({
               tagId: event.item.id
@@ -258,17 +255,14 @@
           }
         });
         // Detect tag remove event and remove it from the collection
-        this.$(this.typeahead).on('itemRemoved', function(event) {
-          // console.log('removed item', event.item);
-          var model = self.collection.get(event.item.cid);
-          self.collection.remove(model);
+        this.$(this.typeahead).on('itemRemoved', function (event) {
+          self.collection.remove(event.item.cid);
           self.trigger('tag:detach');
         });
         // Add existing tags to the tagsinput for editing
-        this.collection.each(function(item) {
+        this.collection.each(function (item) {
           var model = item.getTag().toJSON();
           model.cid = item.cid;
-          model.inCollection = true;
           self.$(self.typeahead).tagsinput('add', model);
         });
         this.$(this.typeahead).tagsinput('focus');
@@ -279,18 +273,18 @@
      * Save the edited tags by sending them to the server
      * @return {void}
      */
-    saveTags: function() {
+    saveTags: function () {
       var self = this;
       if (this.mode === 'edit') {
         this.$el.html('');
         Backbone.sync('create', this.collection, {
           wait: true,
-          success: function() {
+          success: function () {
             self.oldModels = self.collection.clone();
             self.render();
             self.trigger('tag:save');
           },
-          error: function() {
+          error: function () {
             self.collection = self.oldModels;
             self.render();
           }
@@ -302,7 +296,7 @@
      * Cancel edition and restore collection to state before being edited.
      * @return {void}
      */
-    cancelEdit: function() {
+    cancelEdit: function () {
       if (this.mode === 'edit') {
         this.$el.html('');
         this.collection = this.oldModels;
@@ -316,7 +310,7 @@
      * @param  {Backbone.Model} item The tag object
      * @return {void}
      */
-    renderTag: function(item) {
+    renderTag: function (item) {
       this.$el.append(Mustache.render(this.templates.view, item.toJSON()));
     },
     /**
@@ -324,8 +318,8 @@
      * template and appends all the tags to the corresponding element
      * @return {void}
      */
-    render: function() {
-      this.collection.each(function(item) {
+    render: function () {
+      this.collection.each(function (item) {
         this.renderTag(item.getTag());
       }, this);
     }
@@ -336,21 +330,20 @@
    * @param  {Object} options Contains the options to initialize the plugin
    * @return {Backbone.View}
    */
-  Tags.init = function(options) {
-    if (!Tags.Library) {
-      Tags.Library = new Tags.LibraryCollection({
-        bloodhound: options.bloodhound,
-        url: options.url
-      });
-    }
-
+  Tags.init = function (options) {
     var opts = _.defaults(options, {
       render: true,
       fetch: true
     });
-
     var instance = {
       view: {}
+    };
+
+    if (!Tags.Library) {
+      Tags.Library = new Tags.LibraryCollection({
+        bloodhound: opts.bloodhound,
+        url: opts.url
+      });
     }
 
     instance.collection = opts.collection || new Tags.Collection([], {
@@ -378,7 +371,7 @@
     }
 
     return instance;
-  }
+  };
 
   return Tags;
 });

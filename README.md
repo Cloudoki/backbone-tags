@@ -44,7 +44,7 @@ You need to provide Mustache templates to be able to render the tags.
   };
 ```
 
-###Containers
+### Containers
 
 You will need to provide a container where the tags will be rendered.
 
@@ -53,7 +53,7 @@ You will need to provide a container where the tags will be rendered.
 <div id="tags"></div>
 ```
 
-###ParentModel
+### ParentModel
 
 You will need an parent model for the tags to associate with:
 
@@ -61,7 +61,7 @@ You will need an parent model for the tags to associate with:
   // Creating a model to be the tags parent
   var User = Backbone.Model.extend({
     // the model must have a urlRoot assigned because this model is not
-    //  within a collection 
+    //  within a collection
     urlRoot: 'users'
   });
   var user = new User({

@@ -1,7 +1,6 @@
-(function(Backbone, Tags) {
+/* globals Backbone, Tags, $ */
+(function (Backbone, Tags, $) {
   'use strict';
-
-  console.log("Tags Test");
 
   var templates = {
     view: '<span class="label label-info">{{text}}</span>',
@@ -22,6 +21,7 @@
     //  within a collection
     urlRoot: 'users'
   });
+
   var user = new User({
     id: '1',
     name: 'John'
@@ -37,30 +37,31 @@
   });
 
   // enter edit tags mode when button `edit tags` is pressed
-  $('#edit').click(function() {
+  $('#edit').click(function () {
     tags.view.list.editTags();
   });
   // save tags when button `save tags` is pressed
-  $('#save').click(function() {
+  $('#save').click(function () {
     tags.view.list.saveTags();
   });
   // cancel tags edit when button `cancel edit tags` is pressed
-  $('#cancel').click(function() {
+  $('#cancel').click(function () {
     tags.view.list.cancelEdit();
   });
 
   // listening triggers
-  tags.view.list.on('tag:attach', function() {
-    console.log("attach tag triggered");
+  /* eslint-disable no-console */
+  tags.view.list.on('tag:attach', function () {
+    console.log('attach tag triggered');
   });
-  tags.view.list.on('tag:detach', function() {
-    console.log("detach tag triggered");
+  tags.view.list.on('tag:detach', function () {
+    console.log('detach tag triggered');
   });
-  tags.view.list.on('tag:save', function() {
-    console.log("save tags triggered");
+  tags.view.list.on('tag:save', function () {
+    console.log('save tags triggered');
   });
-  tags.view.list.on('tag:cancel', function() {
-    console.log("cancel triggered");
+  tags.view.list.on('tag:cancel', function () {
+    console.log('cancel triggered');
   });
-
-})(Backbone, Tags);
+  /* eslint-enable no-console */
+})(Backbone, Tags, $);

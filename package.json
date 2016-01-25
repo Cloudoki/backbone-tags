@@ -1,13 +1,13 @@
 {
   "name": "backbone-tags",
-  "version": "1.0.0",
-  "description": "Manage Models Tags with Backbone",
+  "version": "0.1.0",
+  "description": "Manage Tags with Backbone",
   "main": "index.js",
   "directories": {
     "example": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint ./"
   },
   "repository": {
     "type": "git",
@@ -15,13 +15,16 @@
   },
   "keywords": [
     "backbone",
+    "mustache",
     "tags"
   ],
-  "author": "Edgar Ribeiro",
-  "email": "edgar@cloudoki.com",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Cloudoki/backbone-tags/issues"
   },
-  "homepage": "https://github.com/Cloudoki/backbone-tags#readme"
+  "homepage": "https://github.com/Cloudoki/backbone-tags#readme",
+  "devDependencies": {
+    "eslint": "^1.10.3",
+    "eslint-config-airbnb": "^3.1.0"
+  }
 }

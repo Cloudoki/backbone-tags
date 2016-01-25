@@ -1,4 +1,4 @@
 npm-debug.log*
 *.iml
 .idea/
-examples/usertags/index.js
+node_modules/
