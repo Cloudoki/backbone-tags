@@ -11,7 +11,7 @@ Manage Models Tags with Backbone, typeahead.js and rendered with Mustache
 
 ## Instalation
 
-- **Script Tag:** `<script type="text/javascript" src="http://cdn.rawgit.com/Cloudoki/backbone-notes/blob/master/index.js"></script>`
+- **Script Tag:** `<script type="text/javascript" src="http://cdn.rawgit.com/Cloudoki/backbone-tags/blob/master/index.js"></script>`
 - **Bower:** `bower install git://github.com/Cloudoki/backbone-tags.git`
 - **npm:** `npm install github:Cloudoki/backbone-tags`
 
