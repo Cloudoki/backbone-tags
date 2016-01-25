@@ -74,7 +74,7 @@
      */
     url: function () {
       return this.parentModel ? this.parentModel.url() + '/' +
-        (this._url || 'tags') : undefined;
+        (this._url || 'tags') : (this._url || 'tags');
     },
     /**
      * Overrides the clone() method to also clone the collection parameters
