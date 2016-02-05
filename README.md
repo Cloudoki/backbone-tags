@@ -1,6 +1,6 @@
 # Backbone-Tags
 
-Manage Models Tags with Backbone, typeahead.js and rendered with Mustache
+Manage Models Tags with Backbone, typeahead.js, bootstrap-tagsinput and Mustache.
 
 ## Requirements
 
@@ -9,7 +9,7 @@ Manage Models Tags with Backbone, typeahead.js and rendered with Mustache
 - [twitter typeahead.js and bloodhound](https://github.com/twitter/typeahead.js) but it seems it's no longer maintained but corejs has a maintained fork [here](https://github.com/corejavascript/typeahead.js)
 - [bootstrap-tagsinput](https://github.com/bootstrap-tagsinput/bootstrap-tagsinput)
 
-## Instalation
+## Installation
 
 - **Script Tag:** `<script type="text/javascript" src="http://cdn.rawgit.com/Cloudoki/backbone-tags/blob/master/index.js"></script>`
 - **Bower:** `bower install git://github.com/Cloudoki/backbone-tags.git`
@@ -46,12 +46,13 @@ You need to provide Mustache templates to be able to render the tags.
 
 ### Containers
 
-You will need to provide a container where the tags will be rendered.
+You will need to provide a container where the tags will be rendered, like the example bellow.
 
 ```html
 <!-- tags views will be rendered here -->
 <div id="tags"></div>
 ```
+This element id will be passed to the tags plugin in order to render the tags in this element.
 
 ### ParentModel
 
@@ -91,7 +92,7 @@ You may use the Tags.init function for standard use of the plugin
 
 When instantiating Tags there are a number of options you can configure.
 - `parentModel`: The Model that will be the parent of the tags. **Required**
-- `url`: The URL where to get the tags from.
+- `url`: The URL where to get the tags from. (default -tags)
 - `tagsElement`: The container where the tags will be rendered.
 - `textName`: The tags object name to access the tags text value. default: *text*
 - `templates`: The templates for rendering the tags view. **Required**
@@ -100,7 +101,10 @@ When instantiating Tags there are a number of options you can configure.
 - `render` auto render the view list after initialization
 - `fetch` fetch the collection after initialization
 
-### Managing the tags:
+#### Note
+The URL to get the tags from will be constructed as 'base URL/parentModel URL/parentModel id/tags URL' resulting in the following URL for the example presented 'http://localhost:8080/examples/usertags/users/1/tags'
+
+### Managing the tags
 
 To manage your tags you can call the tags provided functions:
 - `editTags()`: Enter edit mode.
@@ -123,15 +127,15 @@ To manage your tags you can call the tags provided functions:
   });
   // save tags when button `save tags` is pressed
   $('#save').click(function() {
-    tags.view.list..saveTags();
+    tags.view.list.saveTags();
   });
   // cancel tags edit when button `cancel edit tags` is pressed
   $('#cancel').click(function() {
-    tags.view.list..cancelEdit();
+    tags.view.list.cancelEdit();
   });
 ```
 
-### Listening to tags triggers:
+### Listening to tags triggers
 
 There are 4 events that the tags view emits:
 - **'tag:attach'**: when a new tag is added to the collection
@@ -154,3 +158,16 @@ There are 4 events that the tags view emits:
     console.log("cancel triggered");
   });
 ```
+
+#### Note
+The trigger 'tag:save' will not be called unless the server saves the tag successfully.
+
+### Run Example
+To run the example provided just run the command:
+```
+npm run example
+```
+In your browser go to the URL http:127.0.0.1:8080 and you should see a list of links to the files. Click examples > usertags and you'll see the working example.
+
+#### Note 
+This example is working with dummy data, meaning you cannot save the changes made so pressing the save button will log a 405 HTTP error and return the tags to the initial state.
