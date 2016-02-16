@@ -350,14 +350,17 @@
       parentModel: options.parentModel
     });
 
+    var listInit =  {
+      collection: instance.collection,
+      bloodhound: options.bloodhound,
+      templates: options.templates
+    };
+    
     if (options.tagsElement) {
-      instance.view.list = new Tags.Views.List({
-        el: options.tagsElement,
-        collection: instance.collection,
-        bloodhound: options.bloodhound,
-        templates: options.templates
-      });
+      listInit.el = options.tagsElement;
     }
+    
+    instance.view.list = new Tags.Views.List(listInit);
 
     if (opts.fetch && instance.view.list) {
       // fetch tags from server and render them
